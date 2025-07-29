@@ -1,35 +1,30 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"time"
 
 	DeviceRegistrationService "github.com/manjunath-ravindra/go-edge-device/services/deviceRegistration"
 	StatusPollingService "github.com/manjunath-ravindra/go-edge-device/services/statusPolling"
 	DeviceTypes "github.com/manjunath-ravindra/go-edge-device/types/device"
+	EnvTypes "github.com/manjunath-ravindra/go-edge-device/types/env"
 	EnvVendors "github.com/manjunath-ravindra/go-edge-device/vendors/env"
 )
 
-func printAsJSON(v interface{}) {
-	b, err := json.MarshalIndent(v, "", "  ")
-	if err != nil {
-		fmt.Println("Error marshaling to JSON:", err)
-		return
-	}
-	fmt.Println(string(b), "Status printas json")
-}
-
 func main() {
-
-	envVariables, err := EnvVendors.LoadEnv()
-	if err != nil {
-		fmt.Println("Error loading environment variables:", err)
-		return
+	var envVariables EnvTypes.EnvVariableStructTypes
+	var err error
+	for {
+		envVariables, err = EnvVendors.LoadEnv()
+		if err != nil {
+			fmt.Println("Error loading environment variables:", err)
+			time.Sleep(2 * time.Second)
+			continue
+		}
+		break
 	}
 
 	for {
-
 		status, err := StatusPollingService.PollDeviceStatus(envVariables.BaseURL, envVariables.DeviceID, envVariables.SecretKey)
 
 		if err != nil {
@@ -37,11 +32,10 @@ func main() {
 		}
 
 		var Status DeviceTypes.DeviceStatus = DeviceTypes.DeviceStatus(status.Data.Status)
+		fmt.Println("Status of the Device: ", Status)
 
-		printAsJSON(Status)
 		switch Status {
 		case DeviceTypes.Register:
-			fmt.Println(Status, "Status in main")
 			DeviceRegistrationService.ReRegistration(
 				envVariables.BaseURL,
 				envVariables.DeviceID,
@@ -51,10 +45,10 @@ func main() {
 			)
 		case DeviceTypes.DownloadComplete:
 			//do nothing and exit the switch case
+			//publish logs, records and weld params
 		case DeviceTypes.Deregistered:
 			//do nothing and exit the switch case
 		case DeviceTypes.Failed:
-			fmt.Println(Status, "Status in main")
 			DeviceRegistrationService.InitialRegistration(
 				envVariables.BaseURL,
 				envVariables.DeviceID,
@@ -65,6 +59,6 @@ func main() {
 		default:
 
 		}
-		time.Sleep(10 * time.Second)
+		time.Sleep(15 * time.Second)
 	}
 }
