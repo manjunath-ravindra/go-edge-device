@@ -35,6 +35,14 @@ func main() {
 		fmt.Println("Status of the Device: ", Status)
 
 		switch Status {
+		case DeviceTypes.Failed:
+			DeviceRegistrationService.InitialRegistration(
+				envVariables.BaseURL,
+				envVariables.DeviceID,
+				envVariables.SecretKey,
+				envVariables.DeviceFrom,
+				envVariables.EncryptionKey,
+			)
 		case DeviceTypes.Register:
 			DeviceRegistrationService.ReRegistration(
 				envVariables.BaseURL,
@@ -46,10 +54,17 @@ func main() {
 		case DeviceTypes.DownloadComplete:
 			//do nothing and exit the switch case
 			//publish logs, records and weld params
+
 		case DeviceTypes.Deregistered:
 			//do nothing and exit the switch case
-		case DeviceTypes.Failed:
-			DeviceRegistrationService.InitialRegistration(
+
+		case DeviceTypes.AdminApprovalPending:
+			// do nothing
+
+		case DeviceTypes.AdminApproved:
+			// do nothing
+		case DeviceTypes.CertificateAvailable:
+			DeviceRegistrationService.DownloadCertificateAfterAdminApproval(
 				envVariables.BaseURL,
 				envVariables.DeviceID,
 				envVariables.SecretKey,
