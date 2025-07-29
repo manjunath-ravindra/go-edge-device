@@ -27,3 +27,17 @@ type DownloadAcknowledgeReponse struct {
 	} `json:"data"`
 	TxId string `json:"txId"`
 }
+
+type DeviceStatus string
+
+const (
+	Failed               DeviceStatus = "Failed"
+	CertificateAvailable DeviceStatus = "Certificate Available"
+	DownloadComplete     DeviceStatus = "Download Complete"
+	AdminApprovalPending DeviceStatus = "Admin Approval Pending"
+	AdminApproved        DeviceStatus = "Admin Approved"
+	AdminRejected        DeviceStatus = "Admin Rejected"
+	Deregistered         DeviceStatus = "Deregistered"
+	Register             DeviceStatus = "Register"
+	Pending              DeviceStatus = "Pending"
+)

@@ -13,13 +13,13 @@ import (
 	CryptoVendors "github.com/manjunath-ravindra/go-edge-device/vendors/crypto"
 )
 
-func RegisterDevice(BASE_URL string, DEVICE_ID string, SECRET_KEY string, DEVICE_FROM string) {
+func RegisterDevice(BASE_URL string, DEVICE_ID string, SECRET_KEY string, DEVICE_FROM string, ReRegister bool) {
 	url := BASE_URL + "/device/registration"
 	body := map[string]interface{}{
 		"deviceId":   DEVICE_ID,
 		"secretKey":  SECRET_KEY,
 		"deviceFrom": DEVICE_FROM,
-		"reRegister": false,
+		"reRegister": ReRegister,
 	}
 
 	jsonBody, err := json.Marshal(body)
@@ -45,7 +45,7 @@ func RegisterDevice(BASE_URL string, DEVICE_ID string, SECRET_KEY string, DEVICE
 	}
 	defer resp.Body.Close()
 
-	fmt.Println("Response Status: ", resp.Status)
+	// fmt.Println("Response Status: ", resp.Status)
 	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {
 		fmt.Println("Error reading response body:", err)
@@ -77,7 +77,7 @@ func CheckDeviceStatus(BASE_URL string, DEVICE_ID string, SECRET_KEY string) (*D
 
 	defer resp.Body.Close()
 
-	fmt.Println("Response Status: ", resp.Status)
+	// fmt.Println("Response Status: ", resp.Status)
 	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {
 		fmt.Println("Error reading response body: ", err)
@@ -114,7 +114,7 @@ func DownloadDeviceCertificate(BASE_URL string, DEVICE_ID string, SECRET_KEY str
 
 	defer resp.Body.Close()
 
-	fmt.Println("Response Status: ", resp.Status)
+	// fmt.Println("Response Status: ", resp.Status)
 	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {
 		fmt.Println("Error reading response body:", err)
@@ -204,7 +204,7 @@ func ReturnDownloadAcknowledgement(BASE_URL string, DEVICE_ID string, SECRET_KEY
 
 	defer resp.Body.Close()
 
-	fmt.Println("Response Status: ", resp.Status)
+	// fmt.Println("Response Status: ", resp.Status)
 	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {
 		fmt.Println("Error reading response body:", err)
@@ -217,4 +217,21 @@ func ReturnDownloadAcknowledgement(BASE_URL string, DEVICE_ID string, SECRET_KEY
 	}
 
 	return &result, nil
+}
+
+func RemoveAllCertFiles() error {
+    certsDir := "certs"
+    entries, err := os.ReadDir(certsDir)
+    if err != nil {
+        return err
+    }
+    for _, entry := range entries {
+        if !entry.IsDir() {
+            err := os.Remove(certsDir + "/" + entry.Name())
+            if err != nil {
+                fmt.Printf("Failed to remove %s: %v", entry.Name(), err)
+            }
+        }
+    }
+    return nil
 }
