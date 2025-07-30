@@ -20,6 +20,7 @@ func LoadEnv() (EnvTypes.EnvVariableStructTypes, error) {
 	DEVICE_ID := os.Getenv("DEVICE_ID")
 	SECRET_KEY := os.Getenv("SECRET_KEY")
 	DEVICE_FROM := os.Getenv("DEVICE_FROM")
+	IOT_ENDPOINT := os.Getenv("IOT_ENDPOINT")
 
 	return EnvTypes.EnvVariableStructTypes{
 		BaseURL:       BASE_URL,
@@ -27,5 +28,6 @@ func LoadEnv() (EnvTypes.EnvVariableStructTypes, error) {
 		DeviceID:      DEVICE_ID,
 		SecretKey:     SECRET_KEY,
 		DeviceFrom:    DEVICE_FROM,
+		IotEndpoint:   IOT_ENDPOINT,
 	}, nil
 }

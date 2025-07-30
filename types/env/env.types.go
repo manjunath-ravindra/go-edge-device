@@ -6,4 +6,5 @@ type EnvVariableStructTypes struct {
 	DeviceID      string
 	SecretKey     string
 	DeviceFrom    string
+	IotEndpoint   string
 }

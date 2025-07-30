@@ -5,6 +5,7 @@ import (
 	"time"
 
 	DeviceRegistrationService "github.com/manjunath-ravindra/go-edge-device/services/deviceRegistration"
+	PublishService "github.com/manjunath-ravindra/go-edge-device/services/publish"
 	StatusPollingService "github.com/manjunath-ravindra/go-edge-device/services/statusPolling"
 	DeviceTypes "github.com/manjunath-ravindra/go-edge-device/types/device"
 	EnvTypes "github.com/manjunath-ravindra/go-edge-device/types/env"
@@ -54,6 +55,8 @@ func main() {
 		case DeviceTypes.DownloadComplete:
 			//do nothing and exit the switch case
 			//publish logs, records and weld params
+			PublishService.PublishMqttMessagesSerivce(envVariables.IotEndpoint)
+
 
 		case DeviceTypes.Deregistered:
 			//do nothing and exit the switch case
@@ -63,6 +66,7 @@ func main() {
 
 		case DeviceTypes.AdminApproved:
 			// do nothing
+			
 		case DeviceTypes.CertificateAvailable:
 			DeviceRegistrationService.DownloadCertificateAfterAdminApproval(
 				envVariables.BaseURL,

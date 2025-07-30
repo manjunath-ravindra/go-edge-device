@@ -7,6 +7,8 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"regexp"
+	"strings"
 
 	CryptoTypes "github.com/manjunath-ravindra/go-edge-device/types/crypto"
 	DeviceTypes "github.com/manjunath-ravindra/go-edge-device/types/device"
@@ -152,8 +154,8 @@ func DownloadDeviceCertificate(BASE_URL string, DEVICE_ID string, SECRET_KEY str
 		fmt.Println("Error creating certs directory:", err)
 		return &result, err
 	}
-	certFile := certsDir + "/" + certData.DeviceId + "_certificate.pem"
-	keyFile := certsDir + "/" + certData.DeviceId + "_private.key"
+	certFile := certsDir + "/" + certData.DeviceId + "_certificate.pem.crt"
+	keyFile := certsDir + "/" + certData.DeviceId + "_private.pem.key"
 	caFile := certsDir + "/" + certData.DeviceId + "_AmazonRootCA1.pem"
 
 	err = os.WriteFile(certFile, []byte(certData.CertificatePem), 0600)
@@ -164,9 +166,22 @@ func DownloadDeviceCertificate(BASE_URL string, DEVICE_ID string, SECRET_KEY str
 	if err != nil {
 		fmt.Println("Error writing certificate key:", err)
 	}
-	err = os.WriteFile(caFile, []byte(certData.PrivateCA), 0600)
-	if err != nil {
-		fmt.Println("Error writing private CA:", err)
+	// Format the CA certificate PEM properly before saving
+	formatPEM := func(pem string) string {
+		header := "-----BEGIN CERTIFICATE-----"
+		footer := "-----END CERTIFICATE-----"
+		pem = strings.ReplaceAll(pem, header, "")
+		pem = strings.ReplaceAll(pem, footer, "")
+		pem = strings.TrimSpace(pem)
+		re := regexp.MustCompile(".{1,64}")
+		lines := re.FindAllString(pem, -1)
+		return header + "\n" + strings.Join(lines, "\n") + "\n" + footer + "\n"
+	}
+	if certData.PrivateCA != "" {
+		err = os.WriteFile(caFile, []byte(formatPEM(certData.PrivateCA)), 0600)
+		if err != nil {
+			fmt.Println("Error writing private CA:", err)
+		}
 	}
 
 	return &result, nil
@@ -220,18 +235,18 @@ func ReturnDownloadAcknowledgement(BASE_URL string, DEVICE_ID string, SECRET_KEY
 }
 
 func RemoveAllCertFiles() error {
-    certsDir := "certs"
-    entries, err := os.ReadDir(certsDir)
-    if err != nil {
-        return err
-    }
-    for _, entry := range entries {
-        if !entry.IsDir() {
-            err := os.Remove(certsDir + "/" + entry.Name())
-            if err != nil {
-                fmt.Printf("Failed to remove %s: %v", entry.Name(), err)
-            }
-        }
-    }
-    return nil
+	certsDir := "certs"
+	entries, err := os.ReadDir(certsDir)
+	if err != nil {
+		return err
+	}
+	for _, entry := range entries {
+		if !entry.IsDir() {
+			err := os.Remove(certsDir + "/" + entry.Name())
+			if err != nil {
+				fmt.Printf("Failed to remove %s: %v", entry.Name(), err)
+			}
+		}
+	}
+	return nil
 }
