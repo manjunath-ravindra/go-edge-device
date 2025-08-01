@@ -11,6 +11,7 @@ import (
 	"time"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
+	NetworkHelper "github.com/manjunath-ravindra/go-edge-device/helpers/network"
 )
 
 func PublishMqttMessagesSerivce(IOT_ENDPOINT string) {
@@ -20,6 +21,11 @@ func PublishMqttMessagesSerivce(IOT_ENDPOINT string) {
 	certFile := "certs/GO-TEST_certificate.pem.crt"
 	keyFile := "certs/GO-TEST_private.pem.key"
 	caFile := "certs/GO-TEST_AmazonRootCA1.pem"
+
+	// Initialize network checker and start monitoring
+	networkChecker := NetworkHelper.NewNetworkChecker()
+	networkChecker.StartMonitoring()
+	defer networkChecker.StopMonitoring()
 
 	// Load device certificate and private key
 	cert, err := tls.LoadX509KeyPair(certFile, keyFile)
@@ -58,6 +64,7 @@ func PublishMqttMessagesSerivce(IOT_ENDPOINT string) {
 		os.Exit(1)
 	}
 	fmt.Println("Connected to AWS IoT!")
+	fmt.Println("Network monitoring started. Publishing will pause when network is down.")
 
 	type Payload struct {
 		Message   string `json:"message"`
@@ -72,7 +79,33 @@ func PublishMqttMessagesSerivce(IOT_ENDPOINT string) {
 
 	fmt.Println("Publishing incremental data every second. Press Ctrl+C to exit.")
 	counter := 0
+	lastNetworkStatus := true // Track network status changes
+
 	for t := range ticker.C {
+		// Check network connectivity before publishing (immediate check)
+		currentNetworkStatus := networkChecker.IsNetworkAvailableImmediate()
+
+		// Detect network status changes for immediate response
+		if currentNetworkStatus != lastNetworkStatus {
+			if !currentNetworkStatus {
+				fmt.Println("⚠️  Network connection lost! Pausing message publishing immediately...")
+			} else {
+				fmt.Println("✅ Network connection restored! Resuming message publishing...")
+			}
+			lastNetworkStatus = currentNetworkStatus
+		}
+
+		if !currentNetworkStatus {
+			// Wait for network to be restored (max 5 minutes)
+			if networkChecker.WaitForNetwork(5 * time.Minute) {
+				fmt.Println("Network restored. Resuming message publishing...")
+				lastNetworkStatus = true
+			} else {
+				fmt.Println("Network still down after 5 minutes. Continuing to wait...")
+				continue
+			}
+		}
+
 		payload := Payload{
 			Message:   fmt.Sprintf("Incremental value: %d", counter),
 			Timestamp: t.Unix(),
@@ -82,6 +115,12 @@ func PublishMqttMessagesSerivce(IOT_ENDPOINT string) {
 		payloadBytes, err := json.Marshal(payload)
 		if err != nil {
 			fmt.Printf("Error marshaling payload: %v\n", err)
+			continue
+		}
+
+		// Double-check network before publishing (immediate check)
+		if !networkChecker.IsNetworkAvailableImmediate() {
+			fmt.Println("Network lost during message preparation. Skipping publish...")
 			continue
 		}
 
