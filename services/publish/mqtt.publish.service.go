@@ -47,6 +47,10 @@ func PublishMqttMessagesSerivce(IOT_ENDPOINT string) {
 	opts.AddBroker(fmt.Sprintf("tcps://%s", endpoint))
 	opts.SetClientID(clientID)
 	opts.SetTLSConfig(tlsConfig)
+	opts.SetResumeSubs(true)
+	opts.SetOrderMatters(true) // Maintain order of messages
+	opts.SetMessageChannelDepth(1000)
+	opts.SetAutoReconnect(true)
 
 	client := mqtt.NewClient(opts)
 	if token := client.Connect(); token.Wait() && token.Error() != nil {
@@ -66,10 +70,11 @@ func PublishMqttMessagesSerivce(IOT_ENDPOINT string) {
 	ticker := time.NewTicker(1 * time.Second)
 	defer ticker.Stop()
 
-	fmt.Println("Publishing random data every second. Press Ctrl+C to exit.")
+	fmt.Println("Publishing incremental data every second. Press Ctrl+C to exit.")
+	counter := 0
 	for t := range ticker.C {
 		payload := Payload{
-			Message:   fmt.Sprintf("Random value: %d", rand.Intn(1000)),
+			Message:   fmt.Sprintf("Incremental value: %d", counter),
 			Timestamp: t.Unix(),
 			DeviceID:  clientID,
 		}
@@ -83,6 +88,7 @@ func PublishMqttMessagesSerivce(IOT_ENDPOINT string) {
 		token := client.Publish(topic, 0, false, payloadBytes)
 		token.Wait()
 		fmt.Printf("Published JSON message to topic '%s': %s\n", topic, string(payloadBytes))
+		counter++
 	}
 
 	// Give time for the message to be sent before disconnecting
