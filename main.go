@@ -53,10 +53,8 @@ func main() {
 				envVariables.EncryptionKey,
 			)
 		case DeviceTypes.DownloadComplete:
-			//do nothing and exit the switch case
 			//publish logs, records and weld params
 			PublishService.PublishMqttMessagesSerivce(envVariables.IotEndpoint)
-
 
 		case DeviceTypes.Deregistered:
 			//do nothing and exit the switch case
@@ -66,7 +64,7 @@ func main() {
 
 		case DeviceTypes.AdminApproved:
 			// do nothing
-			
+
 		case DeviceTypes.CertificateAvailable:
 			DeviceRegistrationService.DownloadCertificateAfterAdminApproval(
 				envVariables.BaseURL,
@@ -76,8 +74,9 @@ func main() {
 				envVariables.EncryptionKey,
 			)
 		default:
+			// do nothing
 
 		}
-		time.Sleep(15 * time.Second)
+		time.Sleep(10 * time.Second)
 	}
 }
