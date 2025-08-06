@@ -2,6 +2,7 @@ package DeviceRegistrationHelper
 
 import (
 	"bytes"
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -38,7 +39,11 @@ func RegisterDevice(BASE_URL string, DEVICE_ID string, SECRET_KEY string, DEVICE
 
 	req.Header.Set("Content-Type", "application/json")
 
-	client := &http.Client{}
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+	}
+	client := &http.Client{Transport: tr}
+
 
 	resp, err := client.Do(req)
 	if err != nil {
@@ -69,7 +74,10 @@ func CheckDeviceStatus(BASE_URL string, DEVICE_ID string, SECRET_KEY string) (*D
 
 	req.Header.Set("Content-Type", "application/json")
 
-	client := &http.Client{}
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+	}
+	client := &http.Client{Transport: tr}
 
 	resp, err := client.Do(req)
 	if err != nil {
@@ -79,12 +87,12 @@ func CheckDeviceStatus(BASE_URL string, DEVICE_ID string, SECRET_KEY string) (*D
 
 	defer resp.Body.Close()
 
-	// fmt.Println("Response Status: ", resp.Status)
 	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {
 		fmt.Println("Error reading response body: ", err)
 		return nil, err
 	}
+
 	var result DeviceTypes.DeviceStatusResponse
 	if err := json.Unmarshal(respBody, &result); err != nil {
 		fmt.Println("Error unmarshaling JSON: ", err)
@@ -106,7 +114,10 @@ func DownloadDeviceCertificate(BASE_URL string, DEVICE_ID string, SECRET_KEY str
 
 	req.Header.Set("Content-Type", "application/json")
 
-	client := &http.Client{}
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+	}
+	client := &http.Client{Transport: tr}
 
 	resp, err := client.Do(req)
 	if err != nil {
@@ -209,7 +220,10 @@ func ReturnDownloadAcknowledgement(BASE_URL string, DEVICE_ID string, SECRET_KEY
 
 	req.Header.Set("Content-Type", "application/json")
 
-	client := &http.Client{}
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+	}
+	client := &http.Client{Transport: tr}
 
 	resp, err := client.Do(req)
 	if err != nil {
@@ -236,17 +250,24 @@ func ReturnDownloadAcknowledgement(BASE_URL string, DEVICE_ID string, SECRET_KEY
 
 func RemoveAllCertFiles() error {
 	certsDir := "certs"
+
+	if _, err := os.Stat(certsDir); os.IsNotExist(err) {
+		return nil
+	}
+
 	entries, err := os.ReadDir(certsDir)
 	if err != nil {
 		return err
 	}
+
 	for _, entry := range entries {
 		if !entry.IsDir() {
 			err := os.Remove(certsDir + "/" + entry.Name())
 			if err != nil {
-				fmt.Printf("Failed to remove %s: %v", entry.Name(), err)
+				fmt.Printf("Failed to remove %s: %v\n", entry.Name(), err)
 			}
 		}
 	}
 	return nil
 }
+

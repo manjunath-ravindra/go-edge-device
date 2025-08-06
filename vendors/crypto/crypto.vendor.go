@@ -14,10 +14,15 @@ func DecryptResponse(transactionId, encryptedTextHex, ivHex, keyHex string) (str
 	if err != nil {
 		return "", fmt.Errorf("failed to decode IV hex: %w", err)
 	}
+	if len(iv) != aes.BlockSize {
+		return "", fmt.Errorf("invalid IV length: got %d, expected %d", len(iv), aes.BlockSize)
+	}
+
 	ciphertext, err := hex.DecodeString(encryptedTextHex)
 	if err != nil {
 		return "", fmt.Errorf("failed to decode encrypted text hex: %w", err)
 	}
+
 	keyBytes, err := hex.DecodeString(keyHex)
 	if err != nil {
 		return "", fmt.Errorf("failed to decode key hex: %w", err)
@@ -25,19 +30,22 @@ func DecryptResponse(transactionId, encryptedTextHex, ivHex, keyHex string) (str
 	if len(keyBytes) != 32 {
 		return "", fmt.Errorf("secret key must be 32 bytes for AES-256-CBC after decoding hex")
 	}
+
 	block, err := aes.NewCipher(keyBytes)
 	if err != nil {
 		return "", fmt.Errorf("failed to create cipher: %w", err)
 	}
+
 	mode := cipher.NewCBCDecrypter(block, iv)
 	plaintext := make([]byte, len(ciphertext))
 	mode.CryptBlocks(plaintext, ciphertext)
+
 	// Remove PKCS7 padding
 	paddingLen := int(plaintext[len(plaintext)-1])
 	if paddingLen > len(plaintext) {
 		return "", fmt.Errorf("invalid padding")
 	}
 	plaintext = plaintext[:len(plaintext)-paddingLen]
-	decrypted := string(plaintext)
-	return decrypted, nil
+
+	return string(plaintext), nil
 }

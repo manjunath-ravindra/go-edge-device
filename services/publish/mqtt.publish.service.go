@@ -11,16 +11,35 @@ import (
 	"time"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
+	DeviceRegistrationHelper "github.com/manjunath-ravindra/go-edge-device/helpers/deviceRegistration"
 	NetworkHelper "github.com/manjunath-ravindra/go-edge-device/helpers/network"
 )
 
-func PublishMqttMessagesSerivce(IOT_ENDPOINT string) {
+func PublishMqttMessagesSerivce(IOT_ENDPOINT string, BASE_URL string, DEVICE_ID string, SECRET_KEY string, ENCRYPTION_KEY string) {
 	endpoint := IOT_ENDPOINT
-	clientID := "GO-TEST_CLIENT"
+	clientID := "GO-TEST_DEVICE_CLIENT"
 	topic := "test/topic"
-	certFile := "certs/GO-TEST_certificate.pem.crt"
-	keyFile := "certs/GO-TEST_private.pem.key"
-	caFile := "certs/GO-TEST_AmazonRootCA1.pem"
+	certFolder := "certs"
+	certFile := fmt.Sprintf("%s/%s_certificate.pem.crt", certFolder, DEVICE_ID)
+	keyFile := fmt.Sprintf("%s/%s_private.pem.key", certFolder, DEVICE_ID)
+	caFile := fmt.Sprintf("%s/%s_AmazonRootCA1.pem", certFolder, DEVICE_ID)
+
+	if _, err := os.Stat(certFolder); os.IsNotExist(err) {
+		fmt.Println("Certs folder not found. Attempting to download certificate...")
+
+		response, err := DeviceRegistrationHelper.DownloadDeviceCertificate(BASE_URL, DEVICE_ID, SECRET_KEY, ENCRYPTION_KEY)
+		if err != nil {
+			fmt.Println("Error fetching the certificate from DownloadDeviceCertificate")
+			return
+		}
+
+		if response != nil && response.StatusCode == 200 {
+			DeviceRegistrationHelper.ReturnDownloadAcknowledgement(BASE_URL, DEVICE_ID, SECRET_KEY)
+		} else {
+			fmt.Println("No certificate found for the device")
+			return
+		}
+	}
 
 	// Initialize network checker and start monitoring
 	networkChecker := NetworkHelper.NewNetworkChecker()

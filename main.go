@@ -54,7 +54,13 @@ func main() {
 			)
 		case DeviceTypes.DownloadComplete:
 			//publish logs, records and weld params
-			PublishService.PublishMqttMessagesSerivce(envVariables.IotEndpoint)
+			PublishService.PublishMqttMessagesSerivce(
+				envVariables.IotEndpoint,
+				envVariables.BaseURL,
+				envVariables.DeviceID,
+				envVariables.SecretKey,
+				envVariables.EncryptionKey,
+			)
 
 		case DeviceTypes.Deregistered:
 			//do nothing and exit the switch case
